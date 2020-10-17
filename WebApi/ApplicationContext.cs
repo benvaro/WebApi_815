@@ -10,5 +10,6 @@ namespace WebApi
             Database.EnsureCreated(); // створити БД при першому з'єднанні
         }
         public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
     }
 }

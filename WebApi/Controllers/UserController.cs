@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using WebApi.Entities;
@@ -17,9 +18,22 @@ namespace WebApi.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<User> Index()
+        public IEnumerable<UserDTO> Index()
         {
-            return context.Users.ToList();
+            return context.Users.Select(x => new UserDTO { Id = x.Id, Role = x.Role.Name, Name = x.Name, Email = x.Email });
+        }
+        [HttpGet]
+        [Route("roles")]
+        public IEnumerable<RoleDTO> Roles()
+        {
+            return context.Roles.Select(x=>new RoleDTO() { Id = x.Id, Name = x.Name });
+        }
+
+        [HttpGet]
+        [Route("all")]
+        public IEnumerable<Role> All()
+        {
+            return context.Roles.Include(x=>x.Users).ToList();
         }
 
         [HttpPost]
@@ -27,7 +41,11 @@ namespace WebApi.Controllers
         {
             if (user != null)
             {
-                context.Users.Add(new User { Id = user.Id, Email = user.Email, Name = user.Name });
+                context.Users.Add(new User { 
+                    Id = user.Id,
+                    Email = user.Email,
+                    Name = user.Name,
+                    Role =  context.Roles.FirstOrDefault(x=>x.Name == user.Role)});
                 context.SaveChanges();
                 return Ok();
             }
@@ -41,6 +59,7 @@ namespace WebApi.Controllers
             var res = context.Users.FirstOrDefault(x => x.Id == id);
             res.Name = user.Name;
             res.Email = user.Email;
+            res.Role = context.Roles.FirstOrDefault(x => x.Name == user.Role);
 
             context.Update(res);
             context.SaveChanges();
@@ -55,7 +74,7 @@ namespace WebApi.Controllers
             if (id <= context.Users.Count())
             {
                 user = context.Users.Find(id);
-                return Ok(new UserDTO { Id = user.Id, Name = user.Name, Email = user.Email });
+                return Ok(new UserDTO { Id = user.Id, Name = user.Name, Email = user.Email, Role = user.Role.Name });
             }
             return NotFound();
         }
